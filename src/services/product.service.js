@@ -68,7 +68,6 @@ export async function deleteProduct(id) {
   return true;
 }
 
-/* ---------- Stock moves helpers ---------- */
 async function addMove(product_id, move_type, qty, note = null) {
   await pool.query(
     `INSERT INTO stock_moves (product_id, move_type, qty, note)
@@ -94,11 +93,6 @@ export async function stockOut({ product_id, qty, note }) {
   return await findProductById(product_id);
 }
 
-/* ---------- Assembly (Match) ---------- */
-/**
- * components: [{ productId, perUnit }]
- * result: { code, name, unit, price, qty }
- */
 export async function doAssembly({ components = [], result }) {
   if (!components.length) throw new HttpError(400, 'ไม่มีรายการส่วนประกอบ');
   if (!result?.qty || !result?.code) throw new HttpError(400, 'ผลลัพธ์ไม่ครบ');
@@ -107,7 +101,6 @@ export async function doAssembly({ components = [], result }) {
   try {
     await conn.beginTransaction();
 
-    // ตรวจสต็อกทุกชิ้นส่วน
     for (const c of components) {
       const [[row]] = await conn.query(
         'SELECT id, code, stock_qty FROM products WHERE id = ? FOR UPDATE',
@@ -120,7 +113,6 @@ export async function doAssembly({ components = [], result }) {
       }
     }
 
-    // ตัดสต็อกส่วนประกอบ
     for (const c of components) {
       const need = Number(c.perUnit || 0) * Number(result.qty);
       await conn.query(`UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?`, [need, c.productId]);
@@ -130,7 +122,6 @@ export async function doAssembly({ components = [], result }) {
       );
     }
 
-    // อัปเซิร์ตผลลัพธ์
     const [existRows] = await conn.query('SELECT * FROM products WHERE code = ? LIMIT 1', [result.code.trim()]);
     let resultId;
     if (existRows.length) {
@@ -164,4 +155,12 @@ export async function doAssembly({ components = [], result }) {
   } finally {
     conn.release();
   }
+}
+
+export async function getProductById(id) {
+  const [rows] = await pool.query(
+    'SELECT id, code, name, unit, price, stock_qty FROM products WHERE id = ? LIMIT 1',
+    [id]
+  );
+  return rows[0] || null;
 }

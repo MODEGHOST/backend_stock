@@ -8,6 +8,7 @@ import {
   stockIn,
   stockOut,
   doAssembly,
+  getProductById,
 } from '../services/product.service.js';
 
 export async function listProductsController(req, res) {
@@ -16,7 +17,7 @@ export async function listProductsController(req, res) {
   const pageSize = Number(req.query.pageSize || 10);
   const { items, total } = await listProducts({ q, page, pageSize });
   res.json({ items, total, page, pageSize });
-}
+}  
 
 const createSchema = z.object({
   code: z.string().min(1),
@@ -69,7 +70,6 @@ export async function stockOutController(req, res) {
   res.json(p);
 }
 
-/* Match / Assembly */
 const assemblySchema = z.object({
   components: z.array(z.object({
     productId: z.number().or(z.string()).transform(Number),
@@ -92,4 +92,15 @@ export async function assemblyController(req, res) {
   } catch (err) {
     res.status(err.status || 400).json({ error: err.message || 'Assembly failed' });
   }
+}
+
+
+export async function getProductByIdController(req, res) {
+  const id = Number(req.params.id);
+  if (isNaN(id)) throw new HttpError(400, 'Invalid ID');
+
+  const product = await getProductById(id);
+  if (!product) throw new HttpError(404, 'Product not found');
+
+  res.json(product);
 }
