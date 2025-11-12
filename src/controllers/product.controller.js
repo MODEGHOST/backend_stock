@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import HttpError from '../utils/httpError.js';
 import {
-  listProducts,
+  listProducts,  
   createProduct,
   updateProduct,
   deleteProduct,
