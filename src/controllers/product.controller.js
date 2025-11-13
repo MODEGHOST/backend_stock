@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import HttpError from '../utils/httpError.js';
 import {
-  listProducts,  
+  listProducts,
   createProduct,
   updateProduct,
   deleteProduct,
@@ -15,9 +15,12 @@ export async function listProductsController(req, res) {
   const q = String(req.query.q || '');
   const page = Number(req.query.page || 1);
   const pageSize = Number(req.query.pageSize || 10);
-  const { items, total } = await listProducts({ q, page, pageSize });
+  // warehouseId as optional query param
+  const warehouseId = req.query.warehouseId ? Number(req.query.warehouseId) : undefined;
+
+  const { items, total } = await listProducts({ q, page, pageSize, warehouseId });
   res.json({ items, total, page, pageSize });
-}  
+}
 
 const createSchema = z.object({
   code: z.string().min(1),
@@ -25,6 +28,7 @@ const createSchema = z.object({
   unit: z.string().min(1),
   price: z.number().or(z.string()).transform(Number).default(0),
   stock: z.number().or(z.string()).transform(Number).default(0),
+  warehouseId: z.number().or(z.string()).transform(Number).optional(),
 });
 
 export async function createProductController(req, res) {
@@ -56,6 +60,7 @@ const inOutSchema = z.object({
   product_id: z.number().or(z.string()).transform(Number),
   qty: z.number().or(z.string()).transform(Number).refine(n => n > 0, 'qty > 0'),
   note: z.string().optional(),
+  warehouseId: z.number().or(z.string()).transform(Number).optional(),
 });
 
 export async function stockInController(req, res) {
@@ -81,7 +86,8 @@ const assemblySchema = z.object({
     unit: z.string().min(1),
     price: z.number().or(z.string()).transform(Number).default(0),
     qty: z.number().or(z.string()).transform(Number).refine(n => n > 0, 'qty > 0'),
-  })
+  }),
+  warehouseId: z.number().or(z.string()).transform(Number).optional(),
 });
 
 export async function assemblyController(req, res) {
@@ -99,7 +105,9 @@ export async function getProductByIdController(req, res) {
   const id = Number(req.params.id);
   if (isNaN(id)) throw new HttpError(400, 'Invalid ID');
 
-  const product = await getProductById(id);
+  const warehouseId = req.query.warehouseId ? Number(req.query.warehouseId) : undefined;
+
+  const product = await getProductById(id, warehouseId);
   if (!product) throw new HttpError(404, 'Product not found');
 
   res.json(product);

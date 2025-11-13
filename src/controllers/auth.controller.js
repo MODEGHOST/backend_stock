@@ -4,25 +4,23 @@ import { findUserByEmail, createUser, signAccessToken } from "../services/auth.s
 import bcrypt from 'bcryptjs';
 
 const registerSchema = z.object({
-  company_name: z.string().min(2),
   first_name: z.string().min(1),
   last_name: z.string().min(1),
   phone: z.string().min(6),
   email: z.string().email(),
-  password: z.string().min(6)
+  password: z.string().min(6),
+  company_id: z.number().optional()
 });
 
 export async function registerController(req, res) {
   try {
     const data = registerSchema.parse(req.body);
-    const id = await createUser(data);
-    const user = await findUserByEmail(data.email);
-
+    const created = await createUser(data);
+    const user = created.user || created;
     const token = signAccessToken(user);
     res.status(201).json({ accessToken: token, user });
   } catch (err) {
-    res.status(err.status || 400)
-      .json({ error: err?.message || 'Register failed' });
+    res.status(err.status || 400).json({ error: err?.message || 'Register failed' });
   }
 }
 
@@ -39,8 +37,7 @@ export async function loginController(req, res) {
 
     res.json({ accessToken: signAccessToken(user), user });
   } catch (err) {
-    res.status(err.status || 500)
-      .json({ error: err.message || "Login failed" });
+    res.status(err.status || 500).json({ error: err.message || "Login failed" });
   }
 }
 
