@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   listProductsController,
   createProductController,
@@ -8,19 +8,17 @@ import {
   stockOutController,
   assemblyController,
   getProductByIdController,
-} from '../controllers/product.controller.js';
+} from "../controllers/product.controller.js";
+import requireAuth from "../middleware/auth.js";
 
 const r = Router();
-
-r.get('/', listProductsController);
-r.post('/', createProductController);
-r.put('/:id', updateProductController);
-r.delete('/:id', deleteProductController);
-  
-
-r.post('/stock/in', stockInController);
-r.post('/stock/out', stockOutController);
-
-r.post('/assembly', assemblyController);
+r.get("/", requireAuth, listProductsController);
+r.post("/", requireAuth, createProductController);
+r.put("/:id", requireAuth, updateProductController);
+r.delete("/:id", requireAuth, deleteProductController);
+r.get("/:id", requireAuth, getProductByIdController);
+r.post("/stock/in", requireAuth, stockInController);
+r.post("/stock/out", requireAuth, stockOutController);
+r.post("/assembly", requireAuth, assemblyController);
 
 export default r;
